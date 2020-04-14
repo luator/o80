@@ -2,17 +2,13 @@
 // Author : Vincent Berenz
 
 template <int QUEUE_SIZE, class STATE>
-CommandsSetter<QUEUE_SIZE, STATE>::CommandsSetter(std::string segment_id,
-                                                  std::string object_id)
+CommandsSetter<QUEUE_SIZE, STATE>::CommandsSetter(std::string segment_id)
 
-    : segment_id_(segment_id),
-      object_id_(object_id),
-      completed_segment_id_("completed_" + segment_id),
-      completed_object_id_("completed_" + object_id),
-      command_object_id_("command_id"),
-      running_commands_exchange_(segment_id_, object_id_, false, false),
-      completed_commands_exchange_(
-          completed_segment_id_, completed_object_id_, false, false)
+    : segment_id_(segment_id+"_commands"),
+      completed_segment_id_(segment_id+"_completed_commands"),
+      running_commands_exchange_(segment_id_,QUEUE_SIZE,false),
+      completed_commands_exchange_(segment_id_,QUEUE_SIZE,false),
+      completed_commands_index_(-1)
 {
     // reading from the backend from which command id
     // we should start
@@ -162,50 +158,50 @@ bool CommandsSetter<QUEUE_SIZE, STATE>::wait_for_completion(
 template <int QUEUE_SIZE, class STATE>
 bool CommandsSetter<QUEUE_SIZE, STATE>::communicate()
 {
-    bool everything_shared = true;
 
-    if (running_commands_exchange_.ready_to_produce())
-    {
-        running_commands_exchange_.lock();
-        while (!commands_buffer_.empty())
-        {
-            try
-            {
-                everything_shared =
-                    running_commands_exchange_.set(commands_buffer_.front());
-                if (!everything_shared)
-                {
-                    break;
-                }
-                commands_buffer_.pop_front();
-            }
-            catch (const shared_memory::Memory_overflow_exception &e)
-            {
-                everything_shared = false;
-                break;
-            }
-        }
-        running_commands_exchange_.unlock();
-    }
+    // number of available slots in the time series for new commands
+    // (we want to avoid commands not yet read by the backend to get
+    // lost during rotation of the underlying time series shared memory)
+    
+    int remaining_size = QUEUE_SIZE - non_completed_commands_.size();
 
-    if (completed_commands_exchange_.ready_to_consume())
-    {
-        completed_commands_exchange_.lock();
-        while (true)
-        {
-            CommandId id;
-            bool consuming = completed_commands_exchange_.consume(id);
-            if (consuming)
-            {
-                non_completed_commands_.erase(id.value);
-            }
-            else
-            {
-                break;
-            }
-        }
-        completed_commands_exchange_.unlock();
-    }
+    // sharing all buffered commands with the backend
 
-    return everything_shared;
+    // will be set to false if not all buffered commands managed to get
+    // shared (because more buffered commands than remaining size)
+    bool all_exchanged = true;
+    int nb_exchanged = 0;
+    while(!commands_buffer_.empty())
+	{
+	    running_commands_exchange_.append(commands_buffer_.front());
+	    // checking we are not sharing more commands than we can,
+	    // and if we do, exiting
+	    exchanged++;
+	    if (exchanged>=remaining_size)
+		{
+		    all_exchanged=false;
+		    breakl
+		}
+	}
+
+    // updated list of commmands executed by the backend
+    time_series::Index newest_index =
+	completed_commands_exchange_.newest_timeindex();
+    if(completed_commands_index_<0)
+	{
+	    completed_commands_index_= newest_index+1;
+	}
+    for(time_series::Index index=completed_commands_index_;
+	index<=newest_index;
+	index++)
+	{
+	    int command_id = completed_commands_exchange_[index];
+	    non_completed_commands_.erase(id.value);
+	}
+    completed_commands_index_ = newest_index+1;
+
+    
+    // informing user wether of not all buffered commands could be
+    // written to shared memory
+    return all_exchanged;
 }

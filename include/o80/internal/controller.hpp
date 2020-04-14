@@ -6,6 +6,7 @@
 #include <chrono>
 #include <mutex>
 #include <queue>
+#include "time_series::multiprocess_time_series.hpp"
 #include "command.hpp"
 #include "command_status.hpp"
 #include "command_type.hpp"
@@ -28,6 +29,10 @@ class Controller
 public:
     Controller();
 
+    void set_executed_commands(time_series::MultiprocessTimeSeries<Command<STATE>>*
+			       executed_commands);
+    
+    
     void set_command(const Command<STATE>& command);
 
     bool stop_current(const STATE& current_state,
@@ -45,7 +50,6 @@ public:
                                    const TimePoint& time_now);
 
     int get_current_command_id() const;
-    void get_newly_executed_commands(std::queue<int>& q);
 
 private:
     // control iteration is used to remove invalid commands, i.e. commands
@@ -61,9 +65,10 @@ private:
 private:
     static std::mutex mutex_;
 
+    
     std::queue<Command<STATE>> queue_;
     Command<STATE> current_command_;
-    std::queue<int> executed_commands_;
+    time_series::MultiprocessTimeSeries<Command<STATE>>* executed_commands_;
     STATE desired_state_;
     const STATE* current_state_;
 };

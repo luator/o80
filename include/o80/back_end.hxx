@@ -12,7 +12,8 @@
 void clear_shared_memory(std::string segment_id)
 {
     shared_memory::clear_shared_memory(segment_id);
-    shared_memory::clear_shared_memory(std::string("completed_") + segment_id);
+    shared_memory::clear_shared_memory(segment_id+std::string("_commands"));
+    shared_memory::clear_shared_memory(segment_id+std::string("_completed_commands"));
     shared_memory::clear_shared_memory(segment_id +
                                        std::string("_synchronizer"));
     shared_memory::clear_shared_memory(segment_id +
@@ -28,7 +29,8 @@ void clear_shared_memory(std::string segment_id)
 TEMPLATE_BACKEND
 BACKEND::BackEnd(std::string segment_id)
     : segment_id_(segment_id),
-      commands_getter_(segment_id, std::string("commands")),
+      commands_getter_(segment_id+"_commands", QUEUE_SIZE,
+		       true),
       controllers_manager_(),
       observation_exchange_(segment_id, std::string("observations"),
 			    QUEUE_SIZE,true),
@@ -37,6 +39,7 @@ BACKEND::BackEnd(std::string segment_id)
       observed_frequency_(-1)
 {
     frequency_measure_.tick();
+    controllers_manager_.set_executed_commands(&executed_commands_);
 }
 
 TEMPLATE_BACKEND
@@ -60,14 +63,17 @@ void BACKEND::iterate(const TimePoint& time_now,
         iteration_ = current_iteration;
     }
 
-    commands_getter_.read_commands_from_memory(commands_);
-
-    // dispatching commands to controllers
-    while (!commands_.empty())
-    {
-        controllers_manager_.add_command(commands_.front());
-        commands_.pop();
-    }
+    // reading new commands and dispatching them to the
+    // controllers manager
+    time_series::Index newest_index = commands_getter_.newest_index();
+    for(time_series::Index index = commands_getter_index_;
+	index<=newest_index;
+	index++)
+	{
+	    controllers_manager_.add_command(commands_getter_[index]);
+	    commands_.pop();
+	}
+    commands_getter_index_ = newest_index+1;
 
     // reading desired state based on controllers output
     for (int controller_nb = 0; controller_nb < desired_states_.values.size();
@@ -81,9 +87,8 @@ void BACKEND::iterate(const TimePoint& time_now,
                 current_states.values[controller_nb]);
     }
 
-    // writte completed commands to memory
-    controllers_manager_.get_newly_executed_commands(completed_commands_);
-    commands_getter_.write_completed_commands_to_memory(completed_commands_);
+    // note : executed commands id are written to
+    // the shared time series executed_commands_ directly by controllers
 
     observed_frequency_ = frequency_measure_.tick();
 }

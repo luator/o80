@@ -19,6 +19,9 @@ private:
 public:
     ControllersManager();
 
+    void set_executed_commands(time_series::MultiprocessTimeSeries<Command<STATE>>*
+			       executed_commands);
+    
     void add_command(const Command<STATE> &command);
 
     STATE get_desired_state(int dof,
@@ -28,9 +31,8 @@ public:
 
     int get_current_command_id(int dof) const;
 
-    void get_newly_executed_commands(std::queue<int> &get);
-
 private:
+    time_series::MultiprocessTimeSeries<Command<STATE>>* executed_commands_;
     Controllers controllers_;
     States<NB_ACTUATORS, STATE> previous_desired_states_;
     std::array<bool, NB_ACTUATORS> initialized_;

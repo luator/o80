@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "o80/internal/commands_getter.hpp"
+#include "time_series/multiprocess_time_series.hpp"
 #include "o80/internal/controllers_manager.hpp"
 #include "o80/internal/observation_exchange.hpp"
 #include "o80/states.hpp"
@@ -105,8 +105,11 @@ private:
     std::string segment_id_;
 
     // used to read the commands from the shared memory
-    CommandsGetter<QUEUE_SIZE, STATE> commands_getter_;
+    time_series::MultiprocessTimeSeries<Command<STATE>> commands_getter_;
+    time_series::Index commands_getter_index_;
+    time_series::MultiprocessTimeSeries<Command<STATE>> executed_commands_;
 
+    
     // host controllers (one per actuator), each controller compute
     // the current desired state based on its current command
     ControllersManager<NB_ACTUATORS, STATE> controllers_manager_;
@@ -118,14 +121,6 @@ private:
     // Desired states as computed by the controllers. Reference to this instance
     // is returned by "pulse" functions
     States<NB_ACTUATORS, STATE> desired_states_;
-
-    // queue of commands. New commands are added by commands_getter,
-    // and commands are poped by controllers_manager
-    std::queue<Command<STATE>> commands_;
-
-    // queue of completed command ids, written in the shared memory
-    // commands ids are added by controllers_manager
-    std::queue<int> completed_commands_;
 
     // incremented at each call of iterate
     long int iteration_;

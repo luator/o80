@@ -6,11 +6,10 @@
 #include <deque>
 #include <memory>
 #include <set>
+#include "time_series/multiprocess_time_series.hpp"
 #include "command.hpp"
 #include "command_id.hpp"
 #include "o80/type.hpp"
-#include "shared_memory/exchange_manager_consumer.hpp"
-#include "shared_memory/exchange_manager_producer.hpp"
 
 namespace o80
 {
@@ -155,10 +154,9 @@ private:
     std::string command_object_id_;
 
 private:
-    shared_memory::Exchange_manager_producer<Command<STATE>, QUEUE_SIZE>
-        running_commands_exchange_;
-    shared_memory::Exchange_manager_consumer<CommandId, QUEUE_SIZE>
-        completed_commands_exchange_;
+    time_series::MultiprocessTimeSeries<Command<STATE>> running_commands_exchange_;
+    time_series::MultiprocessTimeSeries<CommandId> completed_commands_exchange_;
+    time_series::Index completed_commands_index_;
     std::set<int> non_completed_commands_;
     std::deque<Command<STATE>> commands_buffer_;
 };
