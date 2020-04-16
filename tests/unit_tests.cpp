@@ -555,10 +555,8 @@ TEST_F(o80_tests, frontend_wait)
         1, o80_example::Joint(300), Iteration(300), Mode::QUEUE);
 
     TimePoint start = time_now();
-    std::cout << "1\n";
     Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation =
         frontend.pulse_and_wait();
-    std::cout << "2\n";
     TimePoint end = time_now();
 
     States<2, o80_example::Joint> states = observation.get_desired_states();
@@ -574,6 +572,42 @@ TEST_F(o80_tests, frontend_wait)
     ASSERT_GT(duration, 1000);
     ASSERT_EQ(j0.value, 200);
     ASSERT_EQ(j1.value, 300);
+}
+
+TEST_F(o80_tests, successive_frontends)
+{
+    RUNNING = true;
+    clear_shared_memory("frontend_wait_utests");
+    real_time_tools::RealTimeThread thread;
+    thread.create_realtime_thread(frontend_wait_fn);
+    usleep(5000);
+
+    for (int i = 0; i < 3; i++)
+    {
+        FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
+                 o80_EXAMPLE_NB_DOFS,
+                 o80_example::Joint,
+                 o80::EmptyExtendedState>
+            frontend("frontend_wait_utests");
+
+        frontend.add_command(
+            0, o80_example::Joint(100), Iteration(100), Mode::QUEUE);
+        frontend.add_command(
+            0, o80_example::Joint(200), Iteration(200), Mode::QUEUE);
+
+        frontend.add_command(
+            1, o80_example::Joint(100), Iteration(100), Mode::QUEUE);
+
+        frontend.add_command(1, o80_example::Joint(100), Mode::OVERWRITE);
+        frontend.add_command(
+            1, o80_example::Joint(300), Iteration(300), Mode::QUEUE);
+
+        Observation<2, o80_example::Joint, o80::EmptyExtendedState>
+            observation = frontend.pulse_and_wait();
+    }
+
+    RUNNING = false;
+    thread.join();
 }
 
 TEST_F(o80_tests, robot_interfaces_destructions)

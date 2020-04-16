@@ -31,7 +31,6 @@ TEMPLATE_BACKEND
 BACKEND::BackEnd(std::string segment_id)
     : segment_id_(segment_id),
       commands_getter_(segment_id + "_commands", QUEUE_SIZE, true),
-      commands_getter_index_(0),
       completed_commands_(segment_id + "_completed_commands", QUEUE_SIZE, true),
       observation_exchange_(
           segment_id, std::string("observations"), QUEUE_SIZE, true),
@@ -45,6 +44,7 @@ BACKEND::BackEnd(std::string segment_id)
     // (and later on updated) in the shared memory
     // so that new front end will know from which command id they should start.
     Command<STATE>::set_id(segment_id, "command_id", 0);
+    commands_getter_index_ = commands_getter_.newest_timeindex(false) + 1;
 }
 
 TEMPLATE_BACKEND
@@ -70,23 +70,19 @@ void BACKEND::iterate(const TimePoint& time_now,
 
     // reading new commands and dispatching them to the
     // controllers manager
-    if (commands_getter_.length() > 0)
+    time_series::Index newest_index = commands_getter_.newest_timeindex(false);
+    if (newest_index >= 0)
     {
-        time_series::Index newest_index = commands_getter_.newest_timeindex();
-        if (newest_index >= 0)
+        for (time_series::Index index = commands_getter_index_;
+             index <= newest_index;
+             index++)
         {
-            for (time_series::Index index = commands_getter_index_;
-                 index <= newest_index;
-                 index++)
-            {
-                controllers_manager_.add_command(commands_getter_[index]);
-            }
-            commands_getter_index_ = newest_index + 1;
-            // keeping track of latest command id, to share with new frontends
-            Command<STATE>::set_id(segment_id_,
-                                   "command_id",
-                                   commands_getter_[newest_index].get_id());
+            controllers_manager_.add_command(commands_getter_[index]);
         }
+        commands_getter_index_ = newest_index + 1;
+        // keeping track of latest command id, to share with new frontends
+        Command<STATE>::set_id(
+            segment_id_, "command_id", commands_getter_[newest_index].get_id());
     }
 
     // reading desired state based on controllers output

@@ -7,12 +7,13 @@ CommandsSetter<QUEUE_SIZE, STATE>::CommandsSetter(std::string segment_id)
     : segment_id_(segment_id + "_commands"),
       completed_segment_id_(segment_id + "_completed_commands"),
       running_commands_exchange_(segment_id_, QUEUE_SIZE, false),
-      completed_commands_exchange_(completed_segment_id_, QUEUE_SIZE, false),
-      completed_commands_exchange_index_(0)
+      completed_commands_exchange_(completed_segment_id_, QUEUE_SIZE, false)
 {
     // reading from the backend from which command id
     // we should start
     Command<STATE>::init_id(segment_id, "command_id");
+    completed_commands_exchange_index_ =
+        completed_commands_exchange_.newest_timeindex(false) + 1;
 }
 
 template <int QUEUE_SIZE, class STATE>
@@ -194,23 +195,24 @@ void CommandsSetter<QUEUE_SIZE, STATE>::communicate(
         }
     }
 
+    std::cout << "commands setter 1\n";
+
     // updated list of commmands executed by the backend
-    if (completed_commands_exchange_.length() > 0)
+    time_series::Index newest_index =
+        completed_commands_exchange_.newest_timeindex(false);
+    if (newest_index >= 0)
     {
-        time_series::Index newest_index =
-            completed_commands_exchange_.newest_timeindex();
-        if (newest_index >= 0)
+        for (time_series::Index index = completed_commands_exchange_index_;
+             index <= newest_index;
+             index++)
         {
-            for (time_series::Index index = completed_commands_exchange_index_;
-                 index <= newest_index;
-                 index++)
-            {
-                CommandId command_id = completed_commands_exchange_[index];
-                non_completed_commands_.erase(command_id.value);
-            }
-            completed_commands_exchange_index_ = newest_index + 1;
+            CommandId command_id = completed_commands_exchange_[index];
+            non_completed_commands_.erase(command_id.value);
         }
+        completed_commands_exchange_index_ = newest_index + 1;
     }
+
+    std::cout << "commands setter 2\n";
 
     // checking if there are not too many non completed commands
     // compared to the available shared memory size
