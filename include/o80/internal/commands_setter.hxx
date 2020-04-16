@@ -195,8 +195,6 @@ void CommandsSetter<QUEUE_SIZE, STATE>::communicate(
         }
     }
 
-    std::cout << "commands setter 1\n";
-
     // updated list of commmands executed by the backend
     time_series::Index newest_index =
         completed_commands_exchange_.newest_timeindex(false);
@@ -211,8 +209,6 @@ void CommandsSetter<QUEUE_SIZE, STATE>::communicate(
         }
         completed_commands_exchange_index_ = newest_index + 1;
     }
-
-    std::cout << "commands setter 2\n";
 
     // checking if there are not too many non completed commands
     // compared to the available shared memory size
