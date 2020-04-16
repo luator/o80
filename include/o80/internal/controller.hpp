@@ -6,11 +6,12 @@
 #include <chrono>
 #include <mutex>
 #include <queue>
-#include "time_series::multiprocess_time_series.hpp"
 #include "command.hpp"
+#include "command_id.hpp"
 #include "command_status.hpp"
 #include "command_type.hpp"
 #include "o80/typedefs.hpp"
+#include "time_series/multiprocess_time_series.hpp"
 
 namespace o80
 {
@@ -29,10 +30,9 @@ class Controller
 public:
     Controller();
 
-    void set_executed_commands(time_series::MultiprocessTimeSeries<Command<STATE>>*
-			       executed_commands);
-    
-    
+    void set_completed_commands(
+        time_series::MultiprocessTimeSeries<CommandId>* completed_commands);
+
     void set_command(const Command<STATE>& command);
 
     bool stop_current(const STATE& current_state,
@@ -52,6 +52,8 @@ public:
     int get_current_command_id() const;
 
 private:
+    void set_completed_command(const Command<STATE>& command);
+
     // control iteration is used to remove invalid commands, i.e. commands
     // that would require to change pressure in a duration smaller than one
     // control iteration period
@@ -65,10 +67,9 @@ private:
 private:
     static std::mutex mutex_;
 
-    
     std::queue<Command<STATE>> queue_;
     Command<STATE> current_command_;
-    time_series::MultiprocessTimeSeries<Command<STATE>>* executed_commands_;
+    time_series::MultiprocessTimeSeries<CommandId>* completed_commands_;
     STATE desired_state_;
     const STATE* current_state_;
 };

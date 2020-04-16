@@ -13,6 +13,15 @@ void Command<STATE>::init_id(std::string segment_id, std::string object_id)
 }
 
 template <class STATE>
+void Command<STATE>::set_id(std::string segment_id,
+                            std::string object_id,
+                            int id)
+{
+    Command<STATE>::id = id;
+    shared_memory::set<int>(segment_id, object_id, Command<STATE>::id);
+}
+
+template <class STATE>
 int Command<STATE>::get_next_id()
 {
     std::lock_guard<std::mutex> guard(Command<STATE> mutex);

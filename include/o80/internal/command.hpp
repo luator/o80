@@ -95,6 +95,7 @@ public:
     // allows new frontend to start creating command id
     // at the command id of the previous frontend
     static void init_id(std::string segment_id, std::string object_id);
+    static void set_id(std::string segment_id, std::string object_id, int id);
 
 private:
     // used by the command constructors to attribute

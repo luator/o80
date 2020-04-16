@@ -4,8 +4,8 @@
 #pragma once
 
 #include "back_end.hpp"
-#include "o80/frequency_manager.hpp"
 #include "o80/burster.hpp"
+#include "o80/frequency_manager.hpp"
 #include "o80/internal/standalone_runner.hpp"
 #include "o80/observation.hpp"
 #include "o80/typedefs.hpp"
@@ -80,8 +80,8 @@ public:
 
 private:
     typedef robot_interfaces::RobotData<RI_ACTION,
-					RI_OBSERVATION,
-					robot_interfaces::Status>
+                                        RI_OBSERVATION,
+                                        robot_interfaces::Status>
         RiData;
     typedef std::shared_ptr<RiData> RiDataPtr;
     typedef robot_interfaces::RobotBackend<RI_ACTION, RI_OBSERVATION> RiBackend;
@@ -163,7 +163,7 @@ public:
      * written to the shared memory.
      */
     virtual void enrich_extended_state(o80_EXTENDED_STATE& extended_state,
-				       const RI_OBSERVATION& observation) = 0;
+                                       const RI_OBSERVATION& observation) = 0;
 
 private:
     bool iterate(const TimePoint& time_now, o80_EXTENDED_STATE& extended_state);
@@ -188,17 +188,13 @@ private:
  * if another standalone of the same segment_id has already
  * been started.
  */
-template <class RobotDriver,
-	  class o80Standalone,
-	  typename... Args>
+template <class RobotDriver, class o80Standalone, typename... Args>
 void start_action_timed_standalone(std::string segment_id,
                                    double frequency,
                                    bool bursting,
                                    Args&&... args);
 
-template <class RobotDriver,
-	  class o80Standalone,
-	  typename... Args>
+template <class RobotDriver, class o80Standalone, typename... Args>
 void start_standalone(std::string segment_id,
                       double frequency,
                       bool bursting,

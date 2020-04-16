@@ -5,7 +5,7 @@ namespace o80
 {
 template <int NB_ACTUATORS, class STATE>
 ControllersManager<NB_ACTUATORS, STATE>::ControllersManager()
-    : executed_commands_(nullptr)
+    : completed_commands_(nullptr)
 {
     for (int i = 0; i < NB_ACTUATORS; i++)
     {
@@ -14,18 +14,15 @@ ControllersManager<NB_ACTUATORS, STATE>::ControllersManager()
 }
 
 template <int NB_ACTUATORS, class STATE>
-void
-ControllersManager<NB_ACTUATORS,
-		   STATE>::set_executed_commands(time_series::MultiprocessTimeSeries<
-						 Command<STATE>>*
-						 executed_commands)
+void ControllersManager<NB_ACTUATORS, STATE>::set_completed_commands(
+    time_series::MultiprocessTimeSeries<CommandId>* completed_commands)
 {
-    for (Controller<STATE>& controller: controllers_)
-	{
-	    controller.set_executed_commands(executed_commands);
-	}
+    for (Controller<STATE>& controller : controllers_)
+    {
+        controller.set_completed_commands(completed_commands);
+    }
 }
-    
+
 template <int NB_ACTUATORS, class STATE>
 void ControllersManager<NB_ACTUATORS, STATE>::add_command(
     const Command<STATE>& command)
@@ -76,5 +73,4 @@ int ControllersManager<NB_ACTUATORS, STATE>::get_current_command_id(
     }
     return controllers_[dof].get_current_command_id();
 }
-
 };

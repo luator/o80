@@ -40,12 +40,5 @@ public:
     {
         archive(value);
     }
-
-    int get_id() const
-    {
-        static int id = -1;
-        id++;
-        return id;
-    }
 };
 }

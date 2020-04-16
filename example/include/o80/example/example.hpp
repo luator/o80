@@ -307,9 +307,8 @@ public:
                           Action,
                           Observation,
                           Joint,
-                          o80::EmptyExtendedState>(driver_ptr,
-                                                   frequency,
-                                                   segment_id)
+                          o80::EmptyExtendedState>(
+              driver_ptr, frequency, segment_id)
     {
     }
 
@@ -335,12 +334,10 @@ public:
     }
 
     void enrich_extended_state(o80::EmptyExtendedState &extended_state,
-		 const Observation &observation)
-    {}
-    
+                               const Observation &observation)
+    {
+    }
 };
-
-    
 
 std::string get_segment_id(int id)
 {

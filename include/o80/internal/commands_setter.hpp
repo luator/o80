@@ -6,10 +6,10 @@
 #include <deque>
 #include <memory>
 #include <set>
-#include "time_series/multiprocess_time_series.hpp"
 #include "command.hpp"
 #include "command_id.hpp"
 #include "o80/type.hpp"
+#include "time_series/multiprocess_time_series.hpp"
 
 namespace o80
 {
@@ -17,7 +17,7 @@ template <int QUEUE_SIZE, class STATE>
 class CommandsSetter
 {
 public:
-    CommandsSetter(std::string segment_id, std::string object_id);
+    CommandsSetter(std::string segment_id);
     ~CommandsSetter();
 
 public:
@@ -115,7 +115,7 @@ public:
      */
     int add_command(int dof, STATE target_state, Speed speed, Mode mode);
 
-    void go_to_posture(const std::map<int, STATE> &dof_state,
+    void go_to_posture(const std::map<int, STATE>& dof_state,
                        int speed,
                        long int time_precision);
 
@@ -127,7 +127,9 @@ public:
      * @param: precision: period at which "communicate" will be called
      */
     void wait_for_completion(int command_id,
-                             std::chrono::microseconds precision);
+                             std::chrono::microseconds precision,
+                             bool& everything_shared,
+                             bool& too_many_not_completed);
 
     /**
      *  The "communicate" function will be called iteratively
@@ -136,14 +138,16 @@ public:
                "add_command"
      * @param: precision: period at which "communicate" will be called
      */
-    bool wait_for_completion(std::set<int> &command_ids,
-                             std::chrono::microseconds precision);
+    void wait_for_completion(std::set<int>& command_ids,
+                             std::chrono::microseconds precision,
+                             bool& everything_shared,
+                             bool& too_many_not_completed);
 
     /**
      * write commands to the shared_memory, and
      * read data from the shared memory.
      */
-    bool communicate();
+    void communicate(bool& all_exchanged, bool& too_many_not_completed);
 
 private:
     // shared memory segment and object ids
@@ -154,9 +158,10 @@ private:
     std::string command_object_id_;
 
 private:
-    time_series::MultiprocessTimeSeries<Command<STATE>> running_commands_exchange_;
+    time_series::MultiprocessTimeSeries<Command<STATE>>
+        running_commands_exchange_;
     time_series::MultiprocessTimeSeries<CommandId> completed_commands_exchange_;
-    time_series::Index completed_commands_index_;
+    time_series::Index completed_commands_exchange_index_;
     std::set<int> non_completed_commands_;
     std::deque<Command<STATE>> commands_buffer_;
 };

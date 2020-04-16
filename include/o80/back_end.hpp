@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "time_series/multiprocess_time_series.hpp"
+#include "o80/frequency_measure.hpp"
 #include "o80/internal/controllers_manager.hpp"
 #include "o80/internal/observation_exchange.hpp"
 #include "o80/states.hpp"
-#include "o80/frequency_measure.hpp"
+#include "time_series/multiprocess_time_series.hpp"
 
 namespace o80
 
@@ -107,9 +107,8 @@ private:
     // used to read the commands from the shared memory
     time_series::MultiprocessTimeSeries<Command<STATE>> commands_getter_;
     time_series::Index commands_getter_index_;
-    time_series::MultiprocessTimeSeries<Command<STATE>> executed_commands_;
+    time_series::MultiprocessTimeSeries<CommandId> completed_commands_;
 
-    
     // host controllers (one per actuator), each controller compute
     // the current desired state based on its current command
     ControllersManager<NB_ACTUATORS, STATE> controllers_manager_;
