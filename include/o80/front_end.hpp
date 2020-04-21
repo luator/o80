@@ -71,7 +71,8 @@ public:
 
     HistoryChunk get_history_since(time_series::Index iteration);
     HistoryChunk get_latest(size_t nb_items);
-
+    Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> wait_for_next();
+    
     /**
      * @brief Add an iteration command to the local command queue.
      * "iteration" means this command aims at the robot to reach
@@ -183,6 +184,8 @@ private:
 private:
     std::string segment_id_;
 
+    time_series::Index history_index_;
+    
     // in charge of reading observation from the shared memory
     ObservationExchange<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE>
         observation_exchange_;

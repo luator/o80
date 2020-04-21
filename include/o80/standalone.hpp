@@ -3,34 +3,21 @@
 
 #pragma once
 
-#include "back_end.hpp"
-#include "o80/burster.hpp"
-#include "o80/frequency_manager.hpp"
-#include "o80/internal/standalone_runner.hpp"
-#include "o80/observation.hpp"
-#include "o80/typedefs.hpp"
-#include "observation.hpp"
+#include "synchronizer/leader.hpp"
 #include "robot_interfaces/robot_backend.hpp"
 #include "robot_interfaces/robot_data.hpp"
 #include "robot_interfaces/robot_driver.hpp"
 #include "robot_interfaces/robot_frontend.hpp"
-#include "synchronizer/leader.hpp"
-#include "typedefs.hpp"
+#include "o80/back_end.hpp"
+#include "o80/spinnable.hpp"
+#include "o80/internal/standalone_runner.hpp"
+#include "o80/observation.hpp"
+#include "o80/typedefs.hpp"
+#include "o80/observation.hpp"
+#include "o80/typedefs.hpp"
 
 namespace o80
 {
-void please_stop(std::string segment_id)
-{
-    shared_memory::set<bool>(segment_id, "should_stop", true);
-    try
-    {
-        synchronizer::Leader leader(segment_id + "_synchronizer");
-        leader.pulse();
-    }
-    catch (...)
-    {
-    }
-}
 
 /**
  * Standalone encapsulates 1) a o80 Backend, and
@@ -67,7 +54,7 @@ template <int QUEUE_SIZE,
           class RI_OBSERVATION,
           class o80_STATE,
           class o80_EXTENDED_STATE>
-class Standalone
+class Standalone : public Spinnable<o80_EXTENDED_STATE>
 {
 public:
     static constexpr int queue_size = QUEUE_SIZE;
@@ -123,24 +110,6 @@ public:
     void stop();
 
     /**
-     * If bursting is false, performs one iteration and then wait for the time
-     * requied
-     * to match the standalone frequency.
-     * If bursting is true, performs n iterations, and then hang until the o80
-     * frontend calls burst. "n" is the number of iterations passed to the o80
-     * frontend burst function.
-     *
-     */
-    bool spin(bool bursting = false);
-
-    /**
-     * similar to spin, and the extended state is added to the observation
-     * that is written to the shared memory by the o80 backend
-     *
-     */
-    bool spin(o80_EXTENDED_STATE& extended_state, bool bursting = false);
-
-    /**
      * convert the observation read from RI frontend into current robot states
      * to be added to the o80 observation that will be written in the shared
      * memory
@@ -166,14 +135,9 @@ public:
                                        const RI_OBSERVATION& observation) = 0;
 
 private:
-    bool iterate(const TimePoint& time_now, o80_EXTENDED_STATE& extended_state);
+    bool iterate(const TimePoint& time_now);
 
 private:
-    double frequency_;
-    Microseconds period_;
-    FrequencyManager frequency_manager_;
-    TimePoint now_;
-    std::shared_ptr<Burster> burster_;
     std::string segment_id_;
     RiDriverPtr ri_driver_ptr_;
     RiDataPtr ri_data_ptr_;

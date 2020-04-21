@@ -610,6 +610,68 @@ TEST_F(o80_tests, successive_frontends)
     thread.join();
 }
 
+
+static void* frontend_wait_low_freq_fn(void*)
+{
+    BackEnd<o80_EXAMPLE_QUEUE_SIZE,
+            o80_EXAMPLE_NB_DOFS,
+            o80_example::Joint,
+            o80::EmptyExtendedState>
+        backend("frontend_wait_utests");
+
+    States<o80_EXAMPLE_NB_DOFS, o80_example::Joint> states;
+    o80_example::Joint j0(0);
+    o80_example::Joint j1(0);
+    states.set(0, j0);
+    states.set(1, j1);
+
+    while (RUNNING)
+    {
+        states = backend.pulse(TimePoint(0), states);
+        usleep(10000);
+    }
+}
+
+
+TEST_F(o80_tests, frontend_wait_for_next)
+{
+    RUNNING = true;
+    clear_shared_memory("frontend_wait_utests");
+    real_time_tools::RealTimeThread thread;
+    thread.create_realtime_thread(frontend_wait_low_freq_fn);
+    usleep(5000);
+
+    for(int a=0;a<3;a++)
+	{
+	    FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
+		     o80_EXAMPLE_NB_DOFS,
+		     o80_example::Joint,
+		     o80::EmptyExtendedState>
+		frontend("frontend_wait_utests");
+
+	    frontend.add_command(
+				 0, o80_example::Joint(100), Iteration(100), Mode::QUEUE);
+	    frontend.pulse();
+
+	    int iteration = -1;
+	    for(int i=0;i<20;i++)
+		{
+		    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation =
+			frontend.wait_for_next();
+		    int iter = observation.get_iteration();
+		    if(iteration>0)
+			{
+			    ASSERT_EQ(iter,iteration+1);
+			}
+		    iteration=iter;
+		}
+	}
+	    
+    RUNNING = false;
+    thread.join();
+}
+
+
 TEST_F(o80_tests, robot_interfaces_destructions)
 {
     typedef o80_example::Action RiAction;

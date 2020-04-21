@@ -17,34 +17,19 @@
                o80_STATE,      \
                o80_EXTENDED_STATE>
 
-static int get_bursting(const std::string& segment_id)
-{
-    int r;
-    shared_memory::get<int>(segment_id, "bursting", r);
-    return r;
-}
-
-static void reset_bursting(const std::string& segment_id)
-{
-    shared_memory::set<int>(segment_id, "bursting", 0);
-}
-
 TEMPLATE_STANDALONE
 STANDALONE::Standalone(RiDriverPtr ri_driver_ptr,
                        double frequency,
                        std::string segment_id)
-    : frequency_(frequency),
-      period_(static_cast<long int>((1.0 / frequency) * 1E6 + 0.5)),
-      frequency_manager_(frequency_),
-      now_(time_now()),
-      burster_(nullptr),
-      segment_id_(segment_id),
-      ri_driver_ptr_(ri_driver_ptr),
-      ri_data_ptr_(std::make_shared<RiData>()),
-      ri_frontend_(ri_data_ptr_),
-      o8o_backend_(segment_id),
-      ri_backend_ptr_(nullptr)
+    : Spinnable<o80_EXTENDED_STATE>(segment_id,frequency),
+    segment_id_(segment_id),
+    ri_driver_ptr_(ri_driver_ptr),
+    ri_data_ptr_(std::make_shared<RiData>()),
+    ri_frontend_(ri_data_ptr_),
+    o8o_backend_(segment_id),
+    ri_backend_ptr_(nullptr)
 {
+    std::cout << "\n\nSTANDALONE: should fix segment ids ! same for burster and backend ???\n\n";
     shared_memory::set<bool>(segment_id, "should_stop", false);
 }
 
@@ -90,8 +75,7 @@ void STANDALONE::stop()
 }
 
 TEMPLATE_STANDALONE
-bool STANDALONE::iterate(const TimePoint& time_now,
-                         o80_EXTENDED_STATE& extended_state)
+bool STANDALONE::iterate(const TimePoint& time_now)
 {
     // reading sensory info from the robot (robot_interfaces)
 
@@ -105,14 +89,14 @@ bool STANDALONE::iterate(const TimePoint& time_now,
         convert(ri_current_states);
 
     // adding information to extended state, based on all what is available
-    enrich_extended_state(extended_state, ri_current_states);
+    enrich_extended_state(this->extended_state_, ri_current_states);
 
     // o80 machinery : reading the stack of command and using controller to
     // compute
     //                  desired state for each actuator, writing observation to
     //                  shared memory
     const o80::States<NB_ACTUATORS, o80_STATE>& desired_states =
-        o8o_backend_.pulse(time_now, o8o_current_states, extended_state);
+        o8o_backend_.pulse(time_now, o8o_current_states, this->extended_state_);
 
     // converting o80 desired state to action to input to robot interface
     RI_ACTION action = convert(desired_states);
@@ -125,68 +109,6 @@ bool STANDALONE::iterate(const TimePoint& time_now,
     shared_memory::get<bool>(segment_id_, "should_stop", should_stop);
 
     return !should_stop;
-}
-
-TEMPLATE_STANDALONE
-bool STANDALONE::spin(o80_EXTENDED_STATE& extended_state, bool bursting)
-{
-    if (bursting && burster_ == nullptr)
-    {
-        burster_ = std::make_shared<Burster>(segment_id_);
-    }
-
-    int nb_iterations = 1;
-    if (bursting)
-    {
-        nb_iterations = get_bursting(segment_id_);
-        reset_bursting(segment_id_);
-    }
-
-    bool should_not_stop = true;
-
-    for (int it = 0; it < nb_iterations; it++)
-    {
-        // one iteration (reading command, applying them, writing
-        // observations to shared memory)
-
-        should_not_stop = iterate(now_, extended_state);
-
-        // received stop signal from user via shared memory
-        if (!should_not_stop)
-        {
-            break;
-        }
-
-        // not in bursting, running at desired frequency
-        if (!bursting)
-        {
-            frequency_manager_.wait();
-            now_ = time_now();
-        }
-
-        // bursting : running as fast as possible,
-        // but keeping track of virtual time
-        else
-        {
-            now_ += period_;
-        }
-    }
-
-    // bursting : after burst of several iterations,
-    // wait for client/python to ask to go again
-    if (bursting && should_not_stop)
-    {
-        burster_->pulse();
-    }
-
-    return should_not_stop;
-}
-
-TEMPLATE_STANDALONE
-bool STANDALONE::spin(bool bursting)
-{
-    o80_EXTENDED_STATE empty;
-    return spin(empty, bursting);
 }
 
 template <class RobotDriver, class o80Standalone, typename... Args>
