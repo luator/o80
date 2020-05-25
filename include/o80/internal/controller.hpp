@@ -51,6 +51,8 @@ public:
 
     int get_current_command_id() const;
 
+    bool reapplied_desired_state() const;
+    
 private:
     void set_completed_command(const Command<STATE>& command);
 
@@ -72,6 +74,11 @@ private:
     time_series::MultiprocessTimeSeries<CommandId>* completed_commands_;
     STATE desired_state_;
     const STATE* current_state_;
+    // memory weather or not the latest called to
+    // get_desired_state was based on command execution,
+    // or returning the same desired state (i.e. command
+    // queue was empty)
+    bool reapplied_desired_state_;
 };
 }
 

@@ -19,13 +19,44 @@ void set_bursting(const std::string& segment_id, int nb_iterations)
 TEMPLATE_FRONTEND
 FRONTEND::FrontEnd(std::string segment_id)
     : segment_id_(segment_id),
-      observation_exchange_(
-          segment_id, std::string("observations"), QUEUE_SIZE, false),
+      observation_exchange_(segment_id,
+			    std::string("observations"),
+			    QUEUE_SIZE,
+			    false),
       commands_setter_(segment_id),
-      leader_(nullptr)
+      leader_(nullptr),
+      logger_(nullptr)
 {
+    history_index_ = observation_exchange_.get_history().newest_timeindex(false);
     internal::set_bursting(segment_id, 1);
 }
+
+TEMPLATE_FRONTEND
+FRONTEND::~FrontEnd()
+{
+  if(logger_!=nullptr)
+    {
+      delete logger_;
+    }
+}
+
+TEMPLATE_FRONTEND
+void
+FRONTEND::log(LogAction action)
+{
+  if(logger_!=nullptr)
+    {
+      logger_->log(segment_id_,action);
+    }
+}
+
+TEMPLATE_FRONTEND
+void
+FRONTEND::start_logging(std::string logger_segment_id)
+{
+  logger_ = new Logger(QUEUE_SIZE,logger_segment_id,false);
+}
+
 
 TEMPLATE_FRONTEND
 time_series::Index FRONTEND::get_current_iteration()
@@ -37,6 +68,24 @@ TEMPLATE_FRONTEND
 int FRONTEND::get_nb_actuators() const
 {
     return NB_ACTUATORS;
+}
+
+TEMPLATE_FRONTEND
+Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> FRONTEND::wait_for_next()
+{
+    history_index_+=1;
+    log(LogAction::FRONTEND_WAIT_START);
+    Observation<NB_ACTUATORS,
+		ROBOT_STATE,
+		EXTENDED_STATE> obs =  observation_exchange_.get_history()[history_index_];
+    log(LogAction::FRONTEND_WAIT_END);
+    return obs;
+}
+
+TEMPLATE_FRONTEND
+void FRONTEND::reset_next_index()
+{
+    history_index_ = observation_exchange_.get_history().newest_timeindex(false)-1;
 }
 
 TEMPLATE_FRONTEND
@@ -134,6 +183,8 @@ void FRONTEND::communicate()
     bool everything_shared;
     bool too_many_not_completed;
     commands_setter_.communicate(everything_shared, too_many_not_completed);
+    log(LogAction::FRONTEND_COMMUNICATE);
+
     if (!everything_shared)
     {
         throw std::runtime_error("shared memory for commands exchange full");
@@ -173,6 +224,7 @@ Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> FRONTEND::pulse()
 {
     command_ids_.clear();
     communicate();
+    log(LogAction::FRONTEND_COMMUNICATE);
     Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> observation;
     observation_exchange_.read(observation);
     return observation;
@@ -184,6 +236,7 @@ Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> FRONTEND::burst(
 {
     command_ids_.clear();
     communicate();
+    log(LogAction::FRONTEND_COMMUNICATE);
     internal::set_bursting(segment_id_, nb_iterations);
     if (leader_ == nullptr)
     {
@@ -212,6 +265,8 @@ FRONTEND::pulse_and_wait()
                                          o80::Microseconds(10),
                                          everything_shared,
                                          too_many_not_completed);
+    log(LogAction::FRONTEND_COMPLETION_WAIT_START);
+    log(LogAction::FRONTEND_COMPLETION_WAIT_END);
     if (!everything_shared)
     {
         throw std::runtime_error("shared memory for commands exchange full");
@@ -224,6 +279,7 @@ FRONTEND::pulse_and_wait()
     command_ids_.clear();
     Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> observation;
     observation_exchange_.read(observation);
+    log(LogAction::FRONTEND_READ);
     return observation;
 }
 
@@ -232,5 +288,6 @@ Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> FRONTEND::read()
 {
     Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> observation;
     observation_exchange_.read(observation);
+    log(LogAction::FRONTEND_READ);
     return observation;
 }

@@ -8,6 +8,7 @@
 #include "internal/commands_setter.hpp"
 #include "internal/observation_exchange.hpp"
 #include "synchronizer/leader.hpp"
+#include "logger.hpp"
 
 namespace o80
 
@@ -25,7 +26,7 @@ typedef std::shared_ptr<synchronizer::Leader> LeaderPtr;
  * @brief FrontEnd is the user interface communicating
  * with a BackEnd. It uses an interprocess shared memory
  * under the hood. "communicating" refers to writing to
- * a stack of command, and/or reading latest observations
+ * a queue of command, and/or reading latest observations
  * written by the backend.
  * The front-end encapsulates a command queue, and add_command
  * functions add commands to this queue. Commands are transfered
@@ -62,6 +63,10 @@ public:
      */
     FrontEnd(std::string segment_id);
 
+  ~FrontEnd();
+  
+  void start_logging(std::string logger_segment_id);
+  
     int get_nb_actuators() const;
 
     time_series::Index get_current_iteration();
@@ -72,6 +77,9 @@ public:
     HistoryChunk get_history_since(time_series::Index iteration);
     HistoryChunk get_latest(size_t nb_items);
 
+    Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> wait_for_next();
+    void reset_next_index();
+    
     /**
      * @brief Add an iteration command to the local command queue.
      * "iteration" means this command aims at the robot to reach
@@ -178,11 +186,15 @@ public:
     Observation<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE> read();
 
 private:
-    void communicate();
+
+  void communicate();
+  void log(LogAction action);
 
 private:
     std::string segment_id_;
 
+    time_series::Index history_index_;
+    
     // in charge of reading observation from the shared memory
     ObservationExchange<NB_ACTUATORS, ROBOT_STATE, EXTENDED_STATE>
         observation_exchange_;
@@ -199,6 +211,9 @@ private:
 
     // in burst mode: used to the send the activating signal to the backend.
     LeaderPtr leader_;
+
+  Logger* logger_;
+  
 };
 
 #include "front_end.hxx"

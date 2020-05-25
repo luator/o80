@@ -55,14 +55,14 @@ TEST_F(o80_tests, observation_exchange)
         observed.values[a] = o80_example::Joint(1);
     }
 
-    ObservationExchange<2, o80_example::Joint, o80::EmptyExtendedState>
+    ObservationExchange<2, o80_example::Joint, o80::VoidExtendedState>
         exchange(o80_EXAMPLE_SEGMENT, std::string("oe_test"));
 
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation_in(
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation_in(
         observed, desired, stamp, iteration, frequency);
     exchange.write(observation_in);
 
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation_out;
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation_out;
     exchange.read(observation_out);
 
     ASSERT_EQ(observation_in.get_iteration(), observation_out.get_iteration());
@@ -425,9 +425,9 @@ TEST_F(o80_tests, front_and_backends_basic)
 
     clear_shared_memory("f_a_bends_utests");
 
-    BackEnd<1000, 2, o80_example::Joint, o80::EmptyExtendedState> backend(
+    BackEnd<1000, 2, o80_example::Joint, o80::VoidExtendedState> backend(
         "f_a_bends_utests");
-    FrontEnd<1000, 2, o80_example::Joint, o80::EmptyExtendedState> frontend(
+    FrontEnd<1000, 2, o80_example::Joint, o80::VoidExtendedState> frontend(
         "f_a_bends_utests");
 
     o80_example::Joint j0(0);
@@ -453,10 +453,10 @@ TEST_F(o80_tests, front_and_backends_basic)
 
     for (int iter = 0; iter < 100; iter++)
     {
-        states = backend.pulse(TimePoint(0), states);
+        states = backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
     }
 
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation =
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation =
         frontend.read();
     states = observation.get_desired_states();
 
@@ -472,7 +472,7 @@ TEST_F(o80_tests, front_and_backends_basic)
 
     for (int iter = 100; iter < 300; iter++)
     {
-        states = backend.pulse(TimePoint(0), states);
+        states = backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
     }
 
     observation = frontend.pulse();
@@ -486,7 +486,7 @@ TEST_F(o80_tests, front_and_backends_basic)
 
     for (int iter = 300; iter < 400; iter++)
     {
-        states = backend.pulse(TimePoint(0), states);
+        states = backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
     }
 
     observation = frontend.read();
@@ -499,6 +499,51 @@ TEST_F(o80_tests, front_and_backends_basic)
     ASSERT_EQ(j1.value, 400);
 }
 
+
+TEST_F(o80_tests, front_and_backends_reapply)
+{
+    clear_shared_memory("f_a_bends_utests");
+
+    bool new_commands_observations = true; // !
+    BackEnd<1000, 2,
+	    o80_example::Joint, o80::VoidExtendedState> backend(
+								"f_a_bends_utests",
+								new_commands_observations);
+    FrontEnd<1000, 2, o80_example::Joint, o80::VoidExtendedState> frontend(
+        "f_a_bends_utests");
+
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation = frontend.pulse();
+    long int iteration = observation.get_iteration();
+    
+    frontend.add_command(0,o80_example::Joint(1),Mode::QUEUE);
+    frontend.pulse();
+
+    States<2, o80_example::Joint> states;
+    backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
+    observation = frontend.pulse();
+    long int iteration2 = observation.get_iteration();
+
+    ASSERT_NE(iteration,iteration2);
+
+    backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
+    observation = frontend.pulse();
+    long int iteration3 = observation.get_iteration();
+
+    ASSERT_EQ(iteration2,iteration3); 
+    
+    frontend.add_command(0,o80_example::Joint(1),Mode::QUEUE);
+    frontend.pulse();
+    backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
+    observation = frontend.pulse();
+    long int iteration4 = observation.get_iteration();
+    
+    ASSERT_NE(iteration3,iteration4); 
+    
+    
+
+}
+    
+>>>>>>> master
 static std::atomic<bool> RUNNING(true);
 
 static void* frontend_wait_fn(void*)
@@ -506,7 +551,7 @@ static void* frontend_wait_fn(void*)
     BackEnd<o80_EXAMPLE_QUEUE_SIZE,
             o80_EXAMPLE_NB_DOFS,
             o80_example::Joint,
-            o80::EmptyExtendedState>
+            o80::VoidExtendedState>
         backend("frontend_wait_utests");
 
     States<o80_EXAMPLE_NB_DOFS, o80_example::Joint> states;
@@ -517,7 +562,7 @@ static void* frontend_wait_fn(void*)
 
     while (RUNNING)
     {
-        states = backend.pulse(TimePoint(0), states);
+        states = backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
         usleep(10);
     }
 }
@@ -539,7 +584,7 @@ TEST_F(o80_tests, frontend_wait)
     FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
              o80_EXAMPLE_NB_DOFS,
              o80_example::Joint,
-             o80::EmptyExtendedState>
+             o80::VoidExtendedState>
         frontend("frontend_wait_utests");
 
     frontend.add_command(
@@ -555,7 +600,7 @@ TEST_F(o80_tests, frontend_wait)
         1, o80_example::Joint(300), Iteration(300), Mode::QUEUE);
 
     TimePoint start = time_now();
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation =
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation =
         frontend.pulse_and_wait();
     TimePoint end = time_now();
 
@@ -652,6 +697,68 @@ TEST_F(o80_tests, robot_interfaces_destructions)
     usleep(1000);
 }
 
+
+static void* frontend_wait_low_freq_fn(void*)
+{
+    BackEnd<o80_EXAMPLE_QUEUE_SIZE,
+	    o80_EXAMPLE_NB_DOFS,
+	    o80_example::Joint,
+	    o80::VoidExtendedState>
+	backend("frontend_wait_utests");
+
+    States<o80_EXAMPLE_NB_DOFS, o80_example::Joint> states;
+    o80_example::Joint j0(0);
+    o80_example::Joint j1(0);
+    states.set(0, j0);
+    states.set(1, j1);
+
+    while (RUNNING)
+	{
+	    states = backend.pulse(TimePoint(0), states, o80::VoidExtendedState());
+	    usleep(10000);
+	}
+}
+
+
+TEST_F(o80_tests, frontend_wait_for_next)
+{
+    RUNNING = true;
+    clear_shared_memory("frontend_wait_utests");
+    real_time_tools::RealTimeThread thread;
+    thread.create_realtime_thread(frontend_wait_low_freq_fn);
+    usleep(5000);
+
+    for(int a=0;a<3;a++)
+	{
+	    FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
+		     o80_EXAMPLE_NB_DOFS,
+		     o80_example::Joint,
+		     o80::VoidExtendedState>
+		frontend("frontend_wait_utests");
+
+	    frontend.add_command(
+				 0, o80_example::Joint(100), Iteration(100), Mode::QUEUE);
+	    frontend.pulse();
+
+	    int iteration = -1;
+	    for(int i=0;i<20;i++)
+		{
+		    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation =
+			frontend.wait_for_next();
+		    int iter = observation.get_iteration();
+		    if(iteration>0)
+			{
+			    ASSERT_EQ(iter,iteration+1);
+			}
+		    iteration=iter;
+		}
+	}
+
+    RUNNING = false;
+    thread.join();
+}
+
+
 TEST_F(o80_tests, standalone_destruction)
 {
     std::string segment_id("ut_standalone_destruction");
@@ -676,7 +783,7 @@ static void* bursting_fn(void*)
     BackEnd<o80_EXAMPLE_QUEUE_SIZE,
             o80_EXAMPLE_NB_DOFS,
             o80_example::Joint,
-            o80::EmptyExtendedState>
+            o80::VoidExtendedState>
         backend("ut_burster");
 
     o80::Burster burster("ut_burster");
@@ -707,7 +814,7 @@ TEST_F(o80_tests, burster)
     FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
              o80_EXAMPLE_NB_DOFS,
              o80_example::Joint,
-             o80::EmptyExtendedState>
+             o80::VoidExtendedState>
         frontend("ut_burster");
 
     frontend.burst(10);
@@ -771,7 +878,7 @@ TEST_F(o80_tests, frontend_burst)
     FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
              o80_EXAMPLE_NB_DOFS,
              o80_example::Joint,
-             o80::EmptyExtendedState>
+             o80::VoidExtendedState>
         frontend("burst_unittests");
     frontend.add_command(0, o80_example::Joint(0), Mode::QUEUE);
     frontend.add_command(
@@ -789,7 +896,7 @@ TEST_F(o80_tests, frontend_burst)
     frontend.add_command(
         1, o80_example::Joint(300), Iteration(300), Mode::QUEUE);
 
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation =
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation =
         frontend.burst(200);
     int iteration = observation.get_iteration();
 
@@ -797,7 +904,7 @@ TEST_F(o80_tests, frontend_burst)
     o80_example::Joint j0 = states.get(0);
     o80_example::Joint j1 = states.get(1);
 
-    Observation<2, o80_example::Joint, o80::EmptyExtendedState> observation2 =
+    Observation<2, o80_example::Joint, o80::VoidExtendedState> observation2 =
         frontend.burst(150);
     int iteration2 = observation2.get_iteration();
 
@@ -834,7 +941,7 @@ TEST_F(o80_tests, history)
     FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
              o80_EXAMPLE_NB_DOFS,
              o80_example::Joint,
-             o80::EmptyExtendedState>
+             o80::VoidExtendedState>
         frontend("burst_unittests");
 
     for (int i = 0; i < 100; i++)
@@ -847,9 +954,8 @@ TEST_F(o80_tests, history)
     ASSERT_EQ(newest, 119);
 
     typedef Observation<o80_EXAMPLE_NB_DOFS,
-                        o80_example::Joint,
-                        o80::EmptyExtendedState>
-        OBS;
+			o80_example::Joint,
+			o80::VoidExtendedState> OBS;
 
     std::vector<OBS> history1 = frontend.get_history_since(90);
     std::vector<OBS> history2 = frontend.get_latest(30);

@@ -32,6 +32,10 @@ public:
 
     int get_current_command_id(int dof) const;
 
+    void get_newly_executed_commands(std::queue<int> &get);
+
+    bool reapplied_desired_states() const;
+    
 private:
     time_series::MultiprocessTimeSeries<Command<STATE>> *completed_commands_;
     Controllers controllers_;

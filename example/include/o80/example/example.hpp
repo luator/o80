@@ -296,7 +296,7 @@ class Standalone
                              Action,       // robot_interface action
                              Observation,  //  robot_interface observation
                              Joint,        // o80 observation
-                             o80::EmptyExtendedState>  // no info on top of obs
+                             o80::VoidExtendedState>  // no info on top of obs
 {
 public:
     Standalone(std::shared_ptr<Driver> driver_ptr,
@@ -307,8 +307,9 @@ public:
                           Action,
                           Observation,
                           Joint,
-                          o80::EmptyExtendedState>(
-              driver_ptr, frequency, segment_id)
+                          o80::VoidExtendedState>(driver_ptr,
+                                                   frequency,
+                                                   segment_id)
     {
     }
 
@@ -333,10 +334,10 @@ public:
         return states;
     }
 
-    void enrich_extended_state(o80::EmptyExtendedState &extended_state,
-                               const Observation &observation)
-    {
-    }
+    void enrich_extended_state(o80::VoidExtendedState &extended_state,
+		 const Observation &observation)
+    {}
+    
 };
 
 std::string get_segment_id(int id)

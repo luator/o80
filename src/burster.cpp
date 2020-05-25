@@ -53,13 +53,13 @@ bool Burster::should_run() const
     return sr;
 }
 
-void Burster::pulse()
+bool Burster::pulse()
 {
     running_ = should_run();
 
     if (!running_)
     {
-        return;
+        return false;
     }
 
     if (follower_ == nullptr)
@@ -75,6 +75,11 @@ void Burster::pulse()
         if (nb_bursts_ >= 0)
         {
             nb_iterated_ = 1;
+	    if(nb_iterated_ >= nb_bursts_)
+		{
+		    nb_iterated_ = -1;
+		    reset_nb_bursts();
+		}
         }
     }
     else
@@ -89,5 +94,7 @@ void Burster::pulse()
             reset_nb_bursts();
         }
     }
+
+    return true;
 }
 }
