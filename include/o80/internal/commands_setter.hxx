@@ -90,6 +90,21 @@ int CommandsSetter<QUEUE_SIZE, STATE>::add_command(int dof,
 }
 
 template <int QUEUE_SIZE, class STATE>
+int CommandsSetter<QUEUE_SIZE, STATE>::add_command(int dof,
+                                                   STATE target_pressure,
+                                                   Speed speed,
+                                                   Mode mode)
+{
+    Command<STATE> command(target_pressure, speed, dof, mode);
+    commands_buffer_.push_back(command);
+    int id = command.get_id();
+    non_completed_commands_.insert(id);
+    return id;
+}
+
+
+
+template <int QUEUE_SIZE, class STATE>
 void CommandsSetter<QUEUE_SIZE, STATE>::go_to_posture(
     const std::map<int, STATE> &dof_states, int speed, long int time_precision)
 {

@@ -73,6 +73,9 @@ void create_core_python_bindings(pybind11::module &m,
 		.def("add_command",
 		     (void (frontend::*)(int, o80_STATE, Speed, Mode)) &
 		     frontend::add_command)
+	      .def("add_command",
+		   (void (frontend::*)(int, o80_STATE, Duration_us, Mode)) &
+		   frontend::add_command)
 		.def("burst", &frontend::burst)
 		.def("final_burst", &frontend::final_burst)
 		.def("pulse_and_wait", &frontend::pulse_and_wait)

@@ -116,6 +116,8 @@ public:
      */
     int add_command(int dof, STATE target_state, Speed speed, Mode mode);
 
+  int add_command(int dof, STATE target_state, Duration_us duration, Mode mode);
+
     void go_to_posture(const std::map<int, STATE> &dof_state,
                        int speed,
                        long int time_precision);

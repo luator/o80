@@ -145,6 +145,13 @@ public:
                      Speed speed,
                      Mode mode);
 
+
+    void add_command(int nb_actuator,
+                     ROBOT_STATE target_state,
+                     Duration_us duration,
+                     Mode mode);
+
+  
     /**
      * @brief Assumes the Backend is encapsulated in a
      * Standalone that has been started in burst mode, i.e.

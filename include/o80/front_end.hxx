@@ -180,6 +180,19 @@ void FRONTEND::add_command(int nb_actuator,
     command_ids_.insert(command_id);
 }
 
+
+TEMPLATE_FRONTEND
+void FRONTEND::add_command(int nb_actuator,
+                           ROBOT_STATE target_state,
+                           Duration_us duration,
+                           Mode mode)
+{
+    int command_id =
+        commands_setter_.add_command(nb_actuator, target_state, duration, mode);
+    command_ids_.insert(command_id);
+}
+
+
 TEMPLATE_FRONTEND
 void FRONTEND::add_command(int nb_actuator, ROBOT_STATE target_state, Mode mode)
 {

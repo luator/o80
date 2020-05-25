@@ -72,13 +72,6 @@ add_executable( drivers_demo
   example/src/drivers_demo.cpp)
 target_link_libraries(drivers_demo o80 ${catkin_LIBRARIES})
 
-#add_executable( example_standalone
-#  example/src/main.cpp)
-#target_link_libraries(example_standalone o80)
-#add_executable( example_mirror
-#  example/src/mirror.cpp)
-#target_link_libraries(example_mirror o80)
-
 ###################################
 # Python bindings for the example #
 ###################################
