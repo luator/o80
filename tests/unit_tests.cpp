@@ -543,7 +543,6 @@ TEST_F(o80_tests, front_and_backends_reapply)
 
 }
     
->>>>>>> master
 static std::atomic<bool> RUNNING(true);
 
 static void* frontend_wait_fn(void*)
@@ -632,7 +631,7 @@ TEST_F(o80_tests, successive_frontends)
         FrontEnd<o80_EXAMPLE_QUEUE_SIZE,
                  o80_EXAMPLE_NB_DOFS,
                  o80_example::Joint,
-                 o80::EmptyExtendedState>
+                 o80::VoidExtendedState>
             frontend("frontend_wait_utests");
 
         frontend.add_command(
@@ -647,7 +646,7 @@ TEST_F(o80_tests, successive_frontends)
         frontend.add_command(
             1, o80_example::Joint(300), Iteration(300), Mode::QUEUE);
 
-        Observation<2, o80_example::Joint, o80::EmptyExtendedState>
+        Observation<2, o80_example::Joint, o80::VoidExtendedState>
             observation = frontend.pulse_and_wait();
     }
 
