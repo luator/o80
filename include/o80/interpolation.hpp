@@ -41,7 +41,7 @@ T intermediate_state(const o80::TimePoint &start,
                      const T &start_state,
                      const T &current_state,
                      const T &target_state,
-                     const o80::Duration_us &duration);
+                     const o80::Duration &duration);
 
 template <typename T>
 /*! Interpolate between start and target state

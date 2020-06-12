@@ -37,7 +37,7 @@ public:
     // duration command, i.e. reaching desired state at time now+duration
     Command(long int pulse_id,
             STATE target_state,
-            Duration_us duration_us,
+            Duration duration_us,
             int dof,
             Mode mode);
 

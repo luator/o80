@@ -8,6 +8,10 @@
 namespace o80
 {
 
+  // forward declaration for using the friend keyword
+  class CommandType;
+  class CommandStatus;
+  
   /**
    * ! commands type, used by the add_commands methods of FrontEnd.
    * -  duration : will try to reach target state over the given duration
@@ -30,14 +34,15 @@ enum Type
    */
 class Speed
 {
+private:
+  // private: to avoid users to create commands with
+  // high speed by mistake, better to use one of th explicit
+  // factory below
+  friend class CommandType;
+  friend class CommandStatus;
+  Speed() : value(0){}
+  Speed(double value_): value(value_){}
 public:
-    Speed()
-    {
-    }
-  /* ! in unit of state per microseconds */
-    Speed(double _value) : value(_value)
-    {
-    }
   /* ! construct a speed based on unit per state per second*/ 
     static Speed per_second(double value)
     {
@@ -58,8 +63,8 @@ public:
     {
         return Speed(value * 1e3);
     }
-
 public:
+  /* ! in unit of state per microseconds */
     double value;  // units per microsecond
     template <class Archive>
     void serialize(Archive &archive)
@@ -72,48 +77,49 @@ public:
    * ! for interpolating toward the desired state 
    *   during a specified duration
    */
-  class Duration_us
+  class Duration
 {
-public:
-    Duration_us()
-    {
-    }
-  /* ! value in microseconds */
-    Duration_us(long int _value) : value(_value)
-    {
-    }
+private:
+  // private: better use one of the factory below
+  // with explicit units
+  friend class CommandType;
+  friend class CommandStatus;
+  Duration(long int d):value(d){}
+  Duration():value(0){}
 
+public:
   /* ! construct a duration from seconds */
-    static Duration_us seconds(long int value)
+    static Duration seconds(long int value)
     {
         Seconds s(value);
         Microseconds ms = std::chrono::duration_cast<Microseconds>(s);
-        return Duration_us(ms.count());
+        return Duration(ms.count());
     }
 
   /* ! construct a duration from milliseconds */
-    static Duration_us milliseconds(long int value)
+    static Duration milliseconds(long int value)
     {
         Milliseconds s(value);
         Microseconds ms = std::chrono::duration_cast<Microseconds>(s);
-        return Duration_us(ms.count());
+        return Duration(ms.count());
     }
 
     /* ! construct a duration from microseconds */
-    static Duration_us microseconds(long int value)
+    static Duration microseconds(long int value)
     {
-        return Duration_us(value);
+        return Duration(value);
     }
 
   /* ! construct a duration from nanoseconds */
-    static Duration_us nanoseconds(long int value)
+    static Duration nanoseconds(long int value)
     {
         Nanoseconds s(value);
         Microseconds ms = std::chrono::duration_cast<Microseconds>(s);
-        return Duration_us(ms.count());
+        return Duration(ms.count());
     }
 
-    long int value;
+    /* ! duration in microseconds */
+    long int value; 
     template <class Archive>
     void serialize(Archive &archive)
     {

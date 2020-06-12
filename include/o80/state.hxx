@@ -70,7 +70,7 @@ State<T,Sub>::intermediate_state(
 			 const Sub &current_state,
 			 const Sub &previous_desired_state,
 			 const Sub &target_state,
-			 const o80::Duration_us &duration) const
+			 const o80::Duration &duration) const
 {
   return o80::intermediate_state(start,now,
 				 start_state.value,

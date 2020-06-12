@@ -12,8 +12,8 @@ CommandType::CommandType(Iteration _iteration)
 {
 }
 
-CommandType::CommandType(Duration_us _duration_us)
-    : type(Type::DURATION), duration(_duration_us.value)
+CommandType::CommandType(Duration _duration)
+    : type(Type::DURATION), duration(_duration.value)
 {
 }
 
@@ -21,9 +21,4 @@ CommandType::CommandType() : type(Type::DIRECT)
 {
 }
 
-/*
-bool CommandType::direct_passed() const
-{
-  return TimeStamp(delayed.stamp).passed();
-  }*/
 }

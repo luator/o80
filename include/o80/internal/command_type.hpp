@@ -13,7 +13,7 @@ class CommandType
 {
 public:
     CommandType(Speed speed);
-    CommandType(Duration_us duration);
+    CommandType(Duration duration);
     CommandType(Iteration iteration);
     CommandType();
 
@@ -28,7 +28,7 @@ public:
 public:
     Type type;
     Speed speed;
-    Duration_us duration;
+    Duration duration;
     Iteration iteration;
 };
 }

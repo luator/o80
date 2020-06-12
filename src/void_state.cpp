@@ -47,7 +47,7 @@ VoidState VoidState::intermediate_state(
     const VoidState &current_state,
     const VoidState &previously_desired_state,
     const VoidState &target_state,
-    const o80::Duration_us &duration) const
+    const o80::Duration &duration) const
 {
     throw std::runtime_error("o80::VoidState duration command not supported");
 }

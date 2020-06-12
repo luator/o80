@@ -128,7 +128,7 @@ public:
     /*! add a command to the buffer commands time series.*/
     void add_command(int nb_actuator,
                      ROBOT_STATE target_state,
-                     Duration_us duration,
+                     Duration duration,
                      Mode mode);
 
     /*! add a command to the buffer commands time series.*/

@@ -43,7 +43,7 @@ public:
                                  const BoolState &current_state,
                                  const BoolState &previously_desired_state,
                                  const BoolState &target_state,
-                                 const o80::Duration_us &duration) const;
+                                 const o80::Duration &duration) const;
 
     BoolState intermediate_state(long int iteration_start,
                                  long int iteration_now,

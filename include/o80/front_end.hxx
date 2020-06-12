@@ -146,7 +146,7 @@ void FRONTEND::add_command(int nb_actuator,
 TEMPLATE_FRONTEND
 void FRONTEND::add_command(int nb_actuator,
                            ROBOT_STATE target_state,
-                           Duration_us duration,
+                           Duration duration,
                            Mode mode)
 {
     Command<ROBOT_STATE> command(

@@ -75,7 +75,7 @@ Command<STATE>& Command<STATE>::operator=(Command<STATE>&& other) noexcept
 template <class STATE>
 Command<STATE>::Command(long int pulse_id,
                         STATE target_state,
-                        Duration_us duration,
+                        Duration duration,
                         int dof,
                         Mode mode)
 

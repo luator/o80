@@ -61,7 +61,7 @@ BoolState BoolState::intermediate_state(
     const BoolState &current_state,
     const BoolState &previously_desired_state,
     const BoolState &target_state,
-    const o80::Duration_us &duration) const
+    const o80::Duration &duration) const
 {
     throw std::runtime_error("o80::BoolState duration command not supported");
 }

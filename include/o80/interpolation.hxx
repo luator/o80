@@ -56,7 +56,7 @@ T intermediate_state(const o80::TimePoint &start,
                      const T &start_state,
                      const T &current,
                      const T &target_state,
-                     const o80::Duration_us &duration)
+                     const o80::Duration &duration)
 {
     long int passed = o80::time_diff_us(start, now);
     if (passed > duration.value)

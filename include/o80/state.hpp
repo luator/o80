@@ -59,7 +59,7 @@ namespace o80
         const Sub &current_state,
         const Sub &previous_desired_state,
         const Sub &target_state,
-        const o80::Duration_us &duration) const;
+        const o80::Duration &duration) const;
 
     Sub intermediate_state(
         long int start_iteration,
